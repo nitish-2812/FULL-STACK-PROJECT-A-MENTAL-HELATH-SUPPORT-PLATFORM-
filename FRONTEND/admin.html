@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Bloom</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+        :root {
+            --bg-color: #FDFDFD;
+            --sidebar-bg: #F8F8F8;
+            --text-primary: #1F2937;
+            --text-secondary: #4B5563;
+            --border-color: #F0F0F0;
+            --accent-gold: #BFA181;
+            --accent-gold-dark: #A68B6E;
+            --accent-gold-soft: #F5F1ED;
+            --status-success: #34D399;
+            --status-warning: #FBBF24;
+            --status-danger: #EF4444;
+            --status-info: #3B82F6;
+            --font-serif: 'Lora', serif;
+            --font-sans: 'Inter', sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-sans); background-color: var(--bg-color); color: var(--text-primary); display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 2rem 1.5rem; flex-shrink: 0; }
+        .sidebar-header { margin-bottom: 2.5rem; text-align: center; }
+        .logo { font-family: var(--font-serif); font-size: 2.25rem; font-weight: 700; color: var(--accent-gold); text-decoration: none; display: block; }
+        .nav-menu { list-style: none; flex-grow: 1; margin-bottom: 2rem; }
+        .nav-item a { display: flex; align-items: center; padding: 0.9rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-weight: 500; transition: background-color 0.2s ease, color 0.2s ease; cursor: pointer; }
+        .nav-item a:hover { background-color: var(--accent-gold-soft); color: var(--text-primary); }
+        .nav-item a.active { background-color: var(--accent-gold); color: white; box-shadow: 0 4px 10px rgba(191, 161, 129, 0.2); }
+        .nav-item a.active i { color: white; }
+        .nav-item a i { width: 20px; margin-right: 1rem; font-size: 1.1rem; }
+        .sidebar-footer { padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
+        .main-content { flex-grow: 1; padding: 3rem; overflow-y: auto; }
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+        .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .main-header h1 { font-family: var(--font-serif); font-size: 2.5rem; font-weight: 700; color: var(--text-primary); }
+        .primary-btn { background-color: var(--accent-gold); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; display: flex; align-items: center; gap: 0.5rem; }
+        .primary-btn:hover { background-color: var(--accent-gold-dark); transform: translateY(-1px); }
+        .card { background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; }
+        .card-header { display: flex; align-items: center; margin-bottom: 1rem; }
+        .card-icon { font-size: 1.25rem; margin-right: 0.75rem; color: var(--accent-gold); }
+        .card-title { font-size: 1.15rem; font-weight: 600; }
+        .card-content { flex-grow: 1; }
+        .chart-container { position: relative; height: 250px; width: 100%; margin-top: 1rem; }
+        .content-table { width: 100%; border-collapse: collapse; background-color: white; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .content-table th, .content-table td { padding: 1.25rem 1.5rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .content-table thead { background-color: #F9FAFB; }
+        .content-table th { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+        .content-table .title-cell { font-weight: 600; }
+        .content-table .category-badge { background-color: var(--accent-gold-soft); color: var(--accent-gold); display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .status-success { background-color: rgba(52, 211, 153, 0.1); color: var(--status-success); }
+        .status-warning { background-color: rgba(251, 191, 36, 0.1); color: var(--status-warning); }
+        .status-danger { background-color: rgba(239, 68, 68, 0.1); color: var(--status-danger); }
+        .status-info { background-color: rgba(59, 130, 246, 0.1); color: #3B82F6; }
+        .actions-cell button { background: none; border: none; cursor: pointer; color: var(--text-secondary); margin: 0 0.5rem; font-size: 1rem; transition: color 0.2s ease; }
+        .actions-cell .delete-btn:hover { color: var(--status-danger); }
+        .actions-cell .approve-btn:hover { color: var(--status-success); }
+        .form-container { background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; max-width: 700px; margin: 2rem auto 0 auto; }
+        .form-container h2 { text-align: center; margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; margin-bottom: 0.6rem; font-weight: 600; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem; }
+        .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; }
+        .secondary-btn { background-color: var(--border-color); color: var(--text-secondary); border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header"><a href="#" data-page="dashboard" class="logo nav-link">Bloom</a></div>
+        <ul class="nav-menu">
+            <li class="nav-item"><a data-page="dashboard" class="nav-link active"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+            <li class="nav-item"><a data-page="content" class="nav-link"><i class="fas fa-file-alt"></i> <span>Content</span></a></li>
+            <li class="nav-item"><a data-page="users" class="nav-link"><i class="fas fa-users"></i> <span>Users</span></a></li>
+            <li class="nav-item"><a data-page="moderation" class="nav-link"><i class="fas fa-flag"></i> <span>Moderation</span></a></li>
+            <li class="nav-item"><a data-page="support-messages" class="nav-link"><i class="fas fa-life-ring"></i> <span>Support Messages</span></a></li>
+            <li class="nav-item"><a data-page="analytics" class="nav-link"><i class="fas fa-chart-line"></i> <span>Analytics</span></a></li>
+        </ul>
+        <div class="sidebar-footer"><a href="index.html" class="nav-item"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></div>
+    </aside>
+
+    <main class="main-content">
+        <section id="dashboard" class="page-section active">
+            <header class="main-header"><h1>Admin Dashboard</h1></header>
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card-header"><i class="fas fa-users card-icon"></i><h3 class="card-title">Total Users</h3></div>
+                    <div class="card-content"><p id="totalUsersCount" style="font-size: 2.5rem; font-weight: 700;">0</p></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><i class="fas fa-flag card-icon"></i><h3 class="card-title">Flagged Posts</h3></div>
+                    <div class="card-content"><p id="flaggedPostsCount" style="font-size: 2.5rem; font-weight: 700; color: var(--status-danger);">0</p></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><i class="fas fa-life-ring card-icon"></i><h3 class="card-title">New Support Messages</h3></div>
+                    <div class="card-content"><p id="pendingTicketsCount" style="font-size: 2.5rem; font-weight: 700; color: var(--status-warning);">0</p></div>
+                </div>
+                <div class="card" style="grid-column: span 3;">
+                    <div class="card-header"><i class="fas fa-chart-bar card-icon"></i><h3 class="card-title">Weekly User Activity</h3></div>
+                    <div class="card-content chart-container">
+                        <canvas id="weeklyUserActivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="content" class="page-section">
+             <header class="main-header">
+                <h1>Manage Content</h1>
+                <button class="primary-btn" id="showAddResourceFormBtn"><i class="fas fa-plus"></i> Add New Resource</button>
+            </header>
+            <div class="form-container" id="resourceFormContainer" style="display: none;">
+                <h2>Add New Resource</h2>
+                <form id="resourceForm">
+                    <div class="form-group"><label for="resourceTitle">Title</label><input type="text" id="resourceTitle" required></div>
+                    <div class="form-group"><label for="resourceCategory">Category</label><select id="resourceCategory" required><option value="">Select Category</option><option value="stress">Stress</option><option value="anxiety">Anxiety</option><option value="motivation">Motivation</option><option value="mindfulness">Mindfulness</option><option value="sleep">Sleep</option><option value="circles">Bloom Circles</option></select></div>
+                    <div class="form-group"><label for="resourceType">Type</label><select id="resourceType" required><option value="">Select Type</option><option value="article">Article</option><option value="video">Video</option><option value="audio">Audio Guide</option><option value="quote">Quote</option></select></div>
+                    <div class="form-group"><label for="resourceLink">Link/Content</label><textarea id="resourceLink" rows="4" required></textarea></div>
+                    <div class="form-group"><label for="resourceImage">Thumbnail Image URL (Optional)</label><input type="url" id="resourceImage"></div>
+                    <div class="form-actions"><button type="submit" class="primary-btn">Save Resource</button><button type="button" class="secondary-btn" id="cancelResourceFormBtn">Cancel</button></div>
+                </form>
+            </div>
+            <h2 style="margin-top: 2rem;">Existing Resources</h2>
+            <table class="content-table">
+                <thead><tr><th>Title</th><th>Category</th><th>Type</th><th>Actions</th></tr></thead>
+                <tbody id="resourcesTableBody"></tbody>
+            </table>
+        </section>
+        
+        <section id="users" class="page-section">
+            <header class="main-header"><h1>Manage Users</h1></header>
+            <table class="content-table">
+                <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+        </section>
+
+        <section id="moderation" class="page-section">
+            <header class="main-header"><h1>Content Moderation</h1></header>
+            <table class="content-table">
+                <thead><tr><th>Post Content</th><th>User</th><th>Date Flagged</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody id="moderationTableBody"></tbody>
+            </table>
+        </section>
+
+        <section id="support-messages" class="page-section">
+            <header class="main-header"><h1>Support Messages</h1></header>
+            <table class="content-table">
+                <thead><tr><th>Sender</th><th>Subject</th><th>Message</th><th>Date Received</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody id="supportMessagesTableBody"></tbody>
+            </table>
+        </section>
+
+        <section id="analytics" class="page-section">
+            <header class="main-header"><h1>Analytics & Insights</h1></header>
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">Overall Mood Distribution</h3></div>
+                    <div class="card-content chart-container">
+                        <canvas id="moodDistributionChart"></canvas>
+                    </div>
+                </div>
+                 <div class="card">
+                     <div class="card-header"><h3 class="card-title">Content Popularity</h3></div>
+                     <div class="card-content chart-container">
+                        <canvas id="contentPopularityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- 1. SELECTORS ---
+        const navLinks = document.querySelectorAll('.nav-link');
+        const pageSections = document.querySelectorAll('.page-section');
+        const showAddResourceFormBtn = document.getElementById('showAddResourceFormBtn');
+        const resourceFormContainer = document.getElementById('resourceFormContainer');
+        const cancelResourceFormBtn = document.getElementById('cancelResourceFormBtn');
+        const resourceForm = document.getElementById('resourceForm');
+        const resourcesTableBody = document.getElementById('resourcesTableBody');
+        const usersTableBody = document.getElementById('usersTableBody');
+        const moderationTableBody = document.getElementById('moderationTableBody');
+        const supportMessagesTableBody = document.getElementById('supportMessagesTableBody');
+        const totalUsersCountEl = document.getElementById('totalUsersCount');
+        const flaggedPostsCountEl = document.getElementById('flaggedPostsCount');
+        const pendingTicketsCountEl = document.getElementById('pendingTicketsCount');
+
+        // --- 2. SETUP & SECURITY ---
+        const API_BASE_URL = 'http://localhost:5000/api';
+        const token = localStorage.getItem('token');
+        if (!token) { window.location.href = 'index.html'; return; }
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.role !== 'admin') { window.location.href = 'student.html'; return; }
+        } catch (e) {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
+        const getAuthHeaders = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` });
+
+        // --- 3. CHART INSTANCES ---
+        let weeklyChartInstance = null;
+        let moodChartInstance = null;
+        let contentChartInstance = null;
+
+        // --- 4. DATA LOADING & CHARTING FUNCTIONS ---
+
+        function initDashboardCharts() {
+            const ctx = document.getElementById('weeklyUserActivityChart');
+            if (!ctx) return;
+            if (weeklyChartInstance) weeklyChartInstance.destroy();
+            weeklyChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{ label: 'Active Users', data: [65, 59, 80, 81, 56, 55, 90], fill: true, backgroundColor: 'rgba(191, 161, 129, 0.2)', borderColor: 'rgba(191, 161, 129, 1)', tension: 0.4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        async function loadAnalyticsData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/analytics`, { headers: getAuthHeaders() });
+                const data = await response.json();
+
+                if (totalUsersCountEl) totalUsersCountEl.textContent = data.summary.totalUsers;
+                if (flaggedPostsCountEl) flaggedPostsCountEl.textContent = data.summary.flaggedPosts;
+                if (pendingTicketsCountEl) pendingTicketsCountEl.textContent = data.summary.pendingTickets;
+
+                const moodCtx = document.getElementById('moodDistributionChart');
+                if (moodCtx) {
+                    if (moodChartInstance) moodChartInstance.destroy();
+                    const labels = data.moodDistribution.map(item => item._id.charAt(0).toUpperCase() + item._id.slice(1));
+                    const counts = data.moodDistribution.map(item => item.count);
+                    moodChartInstance = new Chart(moodCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{ label: 'Mood Count', data: counts, backgroundColor: ['#34D399', '#EF4444', '#FBBF24', '#6B7280'] }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    });
+                }
+                
+                const contentCtx = document.getElementById('contentPopularityChart');
+                if (contentCtx) {
+                    if (contentChartInstance) contentChartInstance.destroy();
+                    const labels = data.contentPopularity.map(item => item._id.charAt(0).toUpperCase() + item._id.slice(1));
+                    const counts = data.contentPopularity.map(item => item.count);
+                    contentChartInstance = new Chart(contentCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{ label: '# of Resources', data: counts, backgroundColor: ['#BFA181', '#A68B6E', '#F5F1ED', '#3B82F6', '#34D399'] }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                    });
+                }
+            } catch (error) { console.error('Error loading analytics:', error); }
+        }
+        
+        async function loadResources() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/resources`, { headers: getAuthHeaders() });
+                const resources = await response.json();
+                resourcesTableBody.innerHTML = '';
+                resources.forEach(resource => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td class="title-cell">${resource.title}</td><td><span class="category-badge">${resource.category}</span></td><td>${resource.type}</td><td class="actions-cell"><button class="delete-btn" data-id="${resource._id}"><i class="fas fa-trash"></i></button></td>`;
+                    resourcesTableBody.appendChild(row);
+                });
+            } catch (error) { console.error('Error loading resources:', error); }
+        }
+        resourceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = { title: document.getElementById('resourceTitle').value, category: document.getElementById('resourceCategory').value, type: document.getElementById('resourceType').value, link: document.getElementById('resourceLink').value, imageUrl: document.getElementById('resourceImage').value };
+            try {
+                await fetch(`${API_BASE_URL}/admin/resources`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data) });
+                resourceForm.reset();
+                resourceFormContainer.style.display = 'none';
+                loadResources();
+            } catch (error) { console.error('Error saving resource:', error); }
+        });
+        resourcesTableBody.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.delete-btn');
+            if (btn) {
+                if (confirm('Are you sure?')) {
+                    try {
+                        await fetch(`${API_BASE_URL}/admin/resources/${btn.dataset.id}`, { method: 'DELETE', headers: getAuthHeaders() });
+                        loadResources();
+                    } catch (error) { console.error('Error deleting resource:', error); }
+                }
+            }
+        });
+        showAddResourceFormBtn.addEventListener('click', () => resourceFormContainer.style.display = 'block');
+        cancelResourceFormBtn.addEventListener('click', () => resourceFormContainer.style.display = 'none');
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/users`, { headers: getAuthHeaders() });
+                const users = await response.json();
+                usersTableBody.innerHTML = '';
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td class="title-cell">${user.name}</td><td>${user.email}</td><td>${user.role}</td><td><span class="status-badge status-info">Active</span></td><td class="actions-cell"><button class="delete-btn" data-id="${user._id}"><i class="fas fa-trash"></i></button></td>`;
+                    usersTableBody.appendChild(row);
+                });
+            } catch (error) { console.error('Error loading users:', error); }
+        }
+
+        async function loadFlaggedPosts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/posts/flagged`, { headers: getAuthHeaders() });
+                const posts = await response.json();
+                moderationTableBody.innerHTML = '';
+                if (posts.length === 0) {
+                    moderationTableBody.innerHTML = `<tr><td colspan="5">No flagged posts.</td></tr>`;
+                    return;
+                }
+                posts.forEach(post => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td class="title-cell">${post.content.substring(0, 100)}...</td><td>${post.userName}</td><td>${new Date(post.createdAt).toLocaleDateString()}</td><td><span class="status-badge status-danger">Flagged</span></td><td class="actions-cell"><button class="delete-post-btn" data-id="${post._id}"><i class="fas fa-trash"></i></button></td>`;
+                    moderationTableBody.appendChild(row);
+                });
+            } catch (error) { console.error('Error loading flagged posts:', error); }
+        }
+        moderationTableBody.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.delete-post-btn');
+            if (btn) {
+                if (confirm('Are you sure?')) {
+                    try {
+                        await fetch(`${API_BASE_URL}/admin/posts/${btn.dataset.id}`, { method: 'DELETE', headers: getAuthHeaders() });
+                        loadFlaggedPosts();
+                    } catch (error) { console.error('Error deleting post:', error); }
+                }
+            }
+        });
+        
+        async function loadSupportTickets() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/support`, { headers: getAuthHeaders() });
+                const tickets = await response.json();
+                supportMessagesTableBody.innerHTML = '';
+                if (tickets.length === 0) {
+                    supportMessagesTableBody.innerHTML = `<tr><td colspan="6">No support messages.</td></tr>`;
+                    return;
+                }
+                tickets.forEach(ticket => {
+                    const row = document.createElement('tr');
+                    const statusClass = ticket.status === 'pending' ? 'status-warning' : 'status-success';
+                    row.innerHTML = `<td class="title-cell">${ticket.senderEmail}</td><td>${ticket.subject}</td><td>${ticket.message.substring(0, 50)}...</td><td>${new Date(ticket.createdAt).toLocaleDateString()}</td><td><span class="status-badge ${statusClass}">${ticket.status}</span></td><td class="actions-cell">${ticket.status === 'pending' ? `<button class="approve-btn" data-id="${ticket._id}"><i class="fas fa-check"></i></button>` : ''}</td>`;
+                    supportMessagesTableBody.appendChild(row);
+                });
+            } catch (error) { console.error('Error loading support tickets:', error); }
+        }
+        supportMessagesTableBody.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.approve-btn');
+            if (btn) {
+                try {
+                    await fetch(`${API_BASE_URL}/admin/support/${btn.dataset.id}`, { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify({ status: 'resolved' }) });
+                    loadSupportTickets();
+                } catch (error) { console.error('Error updating ticket:', error); }
+            }
+        });
+
+        // --- 5. PAGE NAVIGATION ---
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = link.dataset.page;
+                if (page) {
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                    pageSections.forEach(section => section.classList.remove('active'));
+                    document.getElementById(page)?.classList.add('active');
+                    
+                    if (page === 'content') loadResources();
+                    else if (page === 'users') loadUsers();
+                    else if (page === 'moderation') loadFlaggedPosts();
+                    else if (page === 'support-messages') loadSupportTickets();
+                    else if (page === 'analytics') loadAnalyticsData();
+                }
+            });
+        });
+        
+        // --- 6. INITIAL LOAD ---
+        initDashboardCharts();
+        loadAnalyticsData();
+        loadResources();
+    });
+</script>
+</body>
+</html>

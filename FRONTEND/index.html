@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Sign Up - Bloom</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        :root {
+            --primary-color: #3b82f6; /* Blue 500 */
+            --primary-hover-color: #2563eb; /* Blue 600 */
+            --text-color: #1f2937; /* Gray 800 */
+            --container-bg: #ffffff;
+            --success-color: #22c55e; /* Green 500 */
+            --error-color: #ef4444; /* Red 500 */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden; /* Prevents scrollbars */
+        }
+
+        .main-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .panel {
+            width: 50%;
+            height: 100%;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: all 0.5s ease-in-out;
+        }
+
+        .left-panel {
+            background: linear-gradient(-45deg, #fda085, #f6d365, #3b82f6, #8b5cf6);
+            background-size: 400% 400%;
+            animation: gradient-animation 15s ease infinite;
+            color: white;
+        }
+        
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .left-panel h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .left-panel p {
+            font-size: 1.2rem;
+            font-weight: 300;
+            max-width: 400px;
+        }
+
+        .right-panel {
+            background-color: var(--container-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .form {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .title {
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+        
+        .role-selector {
+            display: flex;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            padding: 5px;
+            margin-bottom: 20px;
+            background-color: #f3f4f6;
+        }
+
+        .role-btn {
+            padding: 8px 25px;
+            border: none;
+            background-color: transparent;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6b7280;
+            transition: all 0.3s ease;
+        }
+
+        .role-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);
+        }
+
+        .input-group {
+            position: relative;
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .input-group .icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .input {
+            width: 100%;
+            background-color: #f3f4f6;
+            border: none;
+            padding: 12px 15px 12px 40px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            border: 2px solid transparent;
+            transition: border-color 0.3s ease;
+        }
+        
+        .input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .input:focus ~ .icon {
+            color: var(--primary-color);
+        }
+
+        .button {
+            border-radius: 20px;
+            border: 1px solid var(--primary-color);
+            background-color: var(--primary-color);
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 12px 45px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 80ms ease-in, background-color 0.2s;
+            margin-top: 10px;
+        }
+
+        .button:active {
+            transform: scale(0.95);
+        }
+        
+        .button:hover {
+            background-color: var(--primary-hover-color);
+        }
+        
+        .switch-link {
+            font-size: 0.9rem;
+            margin-top: 20px;
+            color: var(--primary-color);
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .message {
+            font-weight: 600;
+            margin-top: 15px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            height: 20px; /* Reserve space */
+        }
+        
+        .message.visible {
+            opacity: 1;
+        }
+        .success-message {
+            color: var(--success-color);
+        }
+        .error-message {
+            color: var(--error-color);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 100;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 450px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #555;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .panel {
+                width: 100%;
+            }
+            .left-panel {
+                height: 35%;
+            }
+            .right-panel {
+                height: 65%;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="panel left-panel">
+            <h1>Bloom</h1>
+            <p>A safe space for students to find their sunshine and grow.</p>
+        </div>
+        <div class="panel right-panel">
+            <form class="form" id="signInForm" action="#">
+                <h1 class="title">Hello Again!</h1>
+                
+                <div class="role-selector">
+                    <button type="button" class="role-btn active" data-role="student">Student</button>
+                    <button type="button" class="role-btn" data-role="admin">Admin</button>
+                </div>
+
+                <div class="input-group">
+                    <input class="input" id="signInEmail" type="email" placeholder="Email" required/>
+                    <i class="fas fa-envelope icon"></i>
+                </div>
+                <div class="input-group">
+                    <input class="input" id="signInPassword" type="password" placeholder="Password" required/>
+                    <i class="fas fa-lock icon"></i>
+                </div>
+                <a href="#" style="font-size: 0.9rem; margin: 10px 0; align-self: flex-start; color: #6b7280;">Forgot your password?</a>
+                <button class="button" type="submit">Sign In</button>
+                <p class="message" id="messageArea"></p>
+                <p class="switch-link" id="showSignUp">Don't have an account? Sign Up</p>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="signUpModal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeSignUpModal">&times;</span>
+            <form class="form" id="signUpForm" action="#">
+                <h1 class="title">Create Account</h1>
+                <div class="input-group">
+                    <input class="input" id="signUpName" type="text" placeholder="Name" required/>
+                    <i class="fas fa-user icon"></i>
+                </div>
+                <div class="input-group">
+                    <input class="input" id="signUpEmail" type="email" placeholder="Email" required/>
+                    <i class="fas fa-envelope icon"></i>
+                </div>
+                <div class="input-group">
+                    <input class="input" id="signUpPassword" type="password" placeholder="Password" required/>
+                    <i class="fas fa-lock icon"></i>
+                </div>
+                <button class="button" type="submit">Sign Up</button>
+            </form>
+        </div>
+    </div>
+
+<script>
+    // --- DOM Elements ---
+    const showSignUpBtn = document.getElementById('showSignUp');
+    const closeSignUpModalBtn = document.getElementById('closeSignUpModal');
+    const signUpModal = document.getElementById('signUpModal');
+    const signInForm = document.getElementById('signInForm');
+    const signUpForm = document.getElementById('signUpForm');
+    const messageArea = document.getElementById('messageArea');
+    const roleBtns = document.querySelectorAll('.role-btn');
+
+    // --- Configuration ---
+    const API_URL = 'http://localhost:5000/api/auth';
+    let selectedRole = 'student'; // Default role
+
+    // --- Event Listeners ---
+    showSignUpBtn.addEventListener('click', () => signUpModal.classList.add('visible'));
+    closeSignUpModalBtn.addEventListener('click', hideSignUpModal);
+    signUpModal.addEventListener('click', (e) => {
+        if (e.target === signUpModal) hideSignUpModal();
+    });
+    signInForm.addEventListener('submit', handleSignIn);
+    signUpForm.addEventListener('submit', handleSignUp);
+    
+    roleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            roleBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedRole = btn.dataset.role;
+        });
+    });
+
+
+    // --- Functions ---
+    function hideSignUpModal() {
+        signUpModal.classList.remove('visible');
+    }
+
+    function showMessage(text, type) {
+        messageArea.textContent = text;
+        messageArea.className = `message ${type}-message visible`;
+
+        setTimeout(() => {
+            messageArea.classList.remove('visible');
+        }, 4000);
+    }
+
+    async function handleSignUp(e) {
+        e.preventDefault();
+        const name = document.getElementById('signUpName').value;
+        const email = document.getElementById('signUpEmail').value;
+        const password = document.getElementById('signUpPassword').value;
+
+        try {
+            const response = await fetch(`${API_URL}/signup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password, role: 'student' }) // Sign up as student by default
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to sign up');
+            }
+
+            hideSignUpModal();
+            showMessage(data.message, 'success');
+            signUpForm.reset();
+
+        } catch (error) {
+            // Display error in the signup modal or as an alert
+            alert(`Signup Error: ${error.message}`);
+        }
+    }
+
+    async function handleSignIn(e) {
+        e.preventDefault();
+        const email = document.getElementById('signInEmail').value;
+        const password = document.getElementById('signInPassword').value;
+
+        try {
+            const response = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, role: selectedRole })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to log in');
+            }
+
+            // Save the token to browser's local storage
+            localStorage.setItem('token', data.token);
+            
+            showMessage('Login successful! Redirecting...', 'success');
+            
+            setTimeout(() => {
+                if (data.role === 'student') {
+                    window.location.href = 'student.html';
+                } else { // Admin
+                    window.location.href = 'admin.html';
+                }
+            }, 1500);
+
+        } catch (error) {
+            showMessage(error.message, 'error');
+        }
+    }
+</script>
+
+</body>
+</html>

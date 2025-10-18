@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Bloom</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --sidebar-bg: #FFFFFF;
+            --main-bg: #F9FAFB;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --border-color: #E5E7EB;
+            --accent-color: #FBBF24; /* Amber 400 */
+            --accent-hover: #D97706; /* Amber 600 */
+            
+            --focus-bg: #FFFBEB;
+            --wall-bg: #EFF6FF;
+            --resources-bg: #F0FDF4;
+            --mood-bg: #FAF5FF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--main-bg);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden; /* Prevents scrollbars on the body */
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 0 0.5rem 1.5rem 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            background: -webkit-linear-gradient(45deg, var(--accent-color), var(--accent-hover));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+        }
+
+        .nav-menu {
+            list-style: none;
+            flex-grow: 1;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            cursor: pointer;
+        }
+
+        .nav-item a:hover {
+            background-color: #FEFCE8; /* Light Amber 50 */
+            color: var(--text-primary);
+        }
+        
+        .nav-item a.active {
+            background-color: #FEF3C7; /* Amber 100 */
+            color: var(--accent-hover);
+        }
+        
+        .nav-item a.active i {
+            color: var(--accent-hover);
+        }
+
+        .nav-item a i {
+            width: 20px;
+            margin-right: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .sidebar-footer {
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Main Content and Page Section Styles */
+        .main-content {
+            flex-grow: 1;
+            padding: 0;
+            overflow-y: auto; /* Allow scrolling within the main content area */
+        }
+        
+        .page-section {
+            display: none;
+            min-height: 100%; /* Ensure sections take full height for scrolling */
+            width: 100%;
+        }
+        
+        .page-section.active {
+            display: block;
+        }
+
+        .hero-section {
+            padding: 3rem 2.5rem;
+            margin-bottom: 2.5rem;
+            background-size: cover;
+            background-position: center;
+            border-radius: 0 0 20px 20px;
+            position: relative;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 0 0 20px 20px;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            color: white;
+        }
+        
+        .hero-content h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .hero-content p {
+            font-size: 1.1rem;
+            margin-top: 0.25rem;
+            max-width: 500px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        /* Hero Images for Student Sections */
+        #dashboard-hero { background-image: url('https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?q=80&w=2070&auto=format&fit=crop'); }
+        #resources-hero { background-image: url('https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?q=80&w=2072&auto=format&fit=crop'); }
+        #feelings-hero { background-image: url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2071&auto=format&fit=crop'); }
+        #circles-hero { background-image: url('https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=2070&auto=format&fit=crop'); }
+        #mood-tracker-hero { background-image: url('https://images.unsplash.com/photo-1552083375-1447ce886485?q=80&w=2070&auto=format&fit=crop'); }
+        #support-hero { background-image: url('https://images.unsplash.com/photo-1519389950473-47ba0385ab2a?q=80&w=2070&auto=format&fit=crop'); } /* New hero image */
+
+
+        .page-content-wrapper {
+            padding: 0 2.5rem 2.5rem 2.5rem;
+        }
+        
+        .dashboard-vertical-layout { display: flex; flex-direction: column; gap: 2rem; max-width: 900px; }
+        .content-card { 
+            background-color: var(--sidebar-bg); 
+            border: 1px solid var(--border-color); 
+            border-radius: 12px; 
+            padding: 1.5rem; 
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03); 
+            opacity: 0; 
+            transform: translateY(20px); 
+            animation: fadeIn 0.5s ease-out forwards; 
+            transition: transform 0.3s ease, box-shadow 0.3s ease; 
+        }
+        .content-card:hover { transform: translateY(-4px); box-shadow: 0 4px 10px 0 rgba(0,0,0,0.05); }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        .card-header { display: flex; align-items: center; margin-bottom: 1rem; }
+        .card-icon { font-size: 1.1rem; margin-right: 0.75rem; color: var(--text-secondary); }
+        .card-title { font-size: 1.1rem; font-weight: 600; }
+        .card-content p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
+        #focus-card { background-color: var(--focus-bg); }
+        #wall-card { background-color: var(--wall-bg); }
+        #mood-card { background-color: var(--mood-bg); }
+        #resources-card-preview { background-color: var(--resources-bg); }
+        .focus-content { display: flex; align-items: center; gap: 1.5rem; }
+        .focus-content img { width: 120px; height: 120px; border-radius: 8px; object-fit: cover; }
+        .focus-text h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+        .resource-list li { list-style: none; padding: 0.75rem 0; border-bottom: 1px solid #D1FAE5; }
+        .resource-list li:last-child { border-bottom: none; }
+        .resource-list a { text-decoration: none; color: var(--text-primary); font-weight: 500; transition: color 0.2s; }
+        .resource-list a:hover { color: #10B981; }
+        .feelings-post { background-color: #DBEAFE; border: 1px solid #BFDBFE; border-radius: 8px; padding: 1rem; font-style: italic; }
+        .mood-selector { display: flex; justify-content: space-around; padding-top: 1rem; }
+        .mood-btn { font-size: 2rem; cursor: pointer; transition: transform 0.2s; filter: grayscale(80%); }
+        .mood-btn:hover { transform: scale(1.2); filter: grayscale(0%); }
+
+        /* Resource Hub Page Styles */
+        .filter-bar { display: flex; gap: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .filter-btn { background-color: var(--sidebar-bg); border: 1px solid var(--border-color); padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+        .filter-btn:hover { background-color: #F3F4F6; border-color: #D1D5DB; }
+        .filter-btn.active { background-color: var(--accent-color); color: #111827; border-color: var(--accent-color); }
+        .article-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; }
+        .article-card { background-color: var(--sidebar-bg); border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03); overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; display: flex; flex-direction: column; }
+        .article-card:hover { transform: translateY(-5px); box-shadow: 0 4px 12px 0 rgba(0,0,0,0.07); }
+        .article-image { height: 200px; background-size: cover; background-position: center; }
+        .article-content { padding: 1.5rem; display: flex; flex-direction: column; flex-grow: 1; }
+        .article-category { font-size: 0.8rem; font-weight: 700; color: var(--accent-hover); text-transform: uppercase; margin-bottom: 0.5rem; }
+        .article-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-primary); flex-grow: 1; }
+        .article-footer { display: flex; align-items: center; justify-content: space-between; color: var(--text-secondary); font-size: 0.8rem; }
+        .article-type { display: flex; align-items: center; gap: 0.5rem; }
+        .quote-card { background: linear-gradient(120deg, #60a5fa, #818cf8); color: white; }
+        .quote-card .article-title { font-size: 1.5rem; font-style: italic; color: white; text-align: center; }
+        .quote-card .article-footer { color: #e0e7ff; }
+
+        /* Feelings Wall Styles */
+        .feelings-layout { max-width: 800px; margin: 0 auto; }
+        .post-form-card { background-color: var(--sidebar-bg); border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03); margin-bottom: 2rem; }
+        .post-form-card textarea { width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; font-family: 'Inter', sans-serif; font-size: 1rem; resize: vertical; min-height: 80px; }
+        .post-form-card button { background-color: var(--accent-color); color: #111827; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; float: right; margin-top: 1rem; }
+        .post-form-card button:hover { background-color: var(--accent-hover); }
+        .post-feed { display: flex; flex-direction: column; gap: 1.5rem; }
+        .post-card { background-color: var(--sidebar-bg); border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03); }
+        .post-content { margin-bottom: 1rem; font-size: 1rem; line-height: 1.6; }
+        .post-footer { display: flex; align-items: center; justify-content: space-between; color: var(--text-secondary); font-size: 0.9rem; }
+        .post-reactions { display: flex; align-items: center; gap: 0.5rem; }
+        .post-reactions button { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary); transition: color 0.2s, transform 0.2s; }
+        .post-reactions button:hover { transform: scale(1.1); color: #F472B6; }
+        .post-reactions button.liked { color: #F472B6; }
+        
+        /* Bloom Circles Styles */
+        .page-header-actions { display: flex; justify-content: space-between; align-items: center; }
+        .create-circle-btn { background-color: var(--accent-color); color: #111827; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+        .create-circle-btn:hover { background-color: var(--accent-hover); }
+        .circle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; }
+        .circle-card { background-color: var(--sidebar-bg); border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03); padding: 1.5rem; display: flex; flex-direction: column; }
+        .circle-card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .circle-icon { font-size: 2rem; color: var(--accent-color); }
+        .circle-title { font-size: 1.25rem; font-weight: 600; }
+        .circle-description { color: var(--text-secondary); flex-grow: 1; margin-bottom: 1.5rem; }
+        .circle-footer { display: flex; justify-content: space-between; align-items: center; }
+        .circle-members { color: var(--text-secondary); font-weight: 500; }
+        .join-btn { background-color: #E0E7FF; color: #4338CA; border: none; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+        .join-btn:hover { background-color: #C7D2FE; }
+
+        /* Mood Tracker Styles */
+        .mood-tracker-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .mood-log-card .mood-selector { border: 1px dashed var(--border-color); border-radius: 8px; padding: 1rem; }
+        .mood-log-card .mood-btn { font-size: 2.5rem; }
+        .mood-log-card .mood-btn.selected { transform: scale(1.2); filter: grayscale(0%); }
+        .mood-entry { margin-top: 1.5rem; }
+        .mood-entry textarea { width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; font-family: 'Inter', sans-serif; font-size: 0.9rem; resize: vertical; min-height: 60px; }
+        .mood-entry button { background-color: var(--accent-color); color: #111827; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; float: right; margin-top: 0.5rem; }
+        .mood-entry button:hover { background-color: var(--accent-hover); }
+        .mood-trends-card .chart-container { position: relative; height: 200px; }
+        .mood-trends-card .summary { text-align: center; font-weight: 500; margin-bottom: 1rem; }
+
+        /* Support Form Styles (New) */
+        .support-form-card {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: var(--sidebar-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03);
+        }
+        .support-form-card .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .support-form-card label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .support-form-card input[type="email"],
+        .support-form-card input[type="text"],
+        .support-form-card textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            background-color: #F9FAFB;
+            transition: border-color 0.2s;
+        }
+        .support-form-card input:focus,
+        .support-form-card textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
+        }
+        .support-form-card textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        .support-form-card button {
+            background-color: var(--accent-color);
+            color: #111827;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            float: right; /* To align button to the right */
+            margin-top: 1rem;
+        }
+        .support-form-card button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* Responsive Media Queries */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 200px;
+                padding: 1rem;
+            }
+            .nav-item a {
+                padding: 0.6rem 0.8rem;
+            }
+            .nav-item a span {
+                font-size: 0.9rem;
+            }
+            .hero-section {
+                padding: 2.5rem 1.5rem;
+            }
+            .page-content-wrapper {
+                padding: 0 1.5rem 1.5rem 1.5rem;
+            }
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+            .hero-content p {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                overflow-y: auto;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                flex-direction: row; /* Horizontal nav for small screens */
+                padding: 1rem;
+                justify-content: space-between;
+                align-items: center;
+                position: static; /* Remove sticky behavior if any */
+            }
+            .sidebar-header {
+                border-bottom: none;
+                padding-bottom: 0;
+                margin-bottom: 0;
+            }
+            .nav-menu {
+                display: none; /* Hide full nav menu on small screens, can be a toggleable hamburger menu */
+            }
+            .sidebar-footer {
+                display: none; /* Hide logout on small screens, can be moved to a menu */
+            }
+            .main-content {
+                padding-top: 1rem; /* Adjust padding after horizontal nav */
+                height: auto;
+            }
+            .hero-section {
+                padding: 2rem 1rem;
+                margin-bottom: 1.5rem;
+                border-radius: 0; /* Remove bottom radius on small screens */
+            }
+            .page-content-wrapper {
+                padding: 0 1rem 1rem 1rem;
+            }
+            .dashboard-vertical-layout, .mood-tracker-layout {
+                grid-template-columns: 1fr; /* Stack columns on small screens */
+            }
+            .mood-tracker-layout {
+                display: flex; /* Override grid to stack for simplicity on mobile */
+                flex-direction: column;
+            }
+            .focus-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            .focus-content img {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="#" data-page="dashboard" class="logo nav-link">Bloom</a>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a data-page="dashboard" class="nav-link active"><i class="fas fa-home"></i> <span>Dashboard</span></a>
+            </li>
+            <li class="nav-item">
+                <a data-page="resources" class="nav-link"><i class="fas fa-book-open"></i> <span>Resources</span></a>
+            </li>
+            <li class="nav-item">
+                <a data-page="feelings-wall" class="nav-link"><i class="fas fa-comments"></i> <span>Feelings Wall</span></a>
+            </li>
+               <li class="nav-item">
+                <a data-page="bloom-circles" class="nav-link"><i class="fas fa-spa"></i> <span>Bloom Circles</span></a>
+            </li>
+            <li class="nav-item">
+                <a data-page="mood-tracker" class="nav-link"><i class="fas fa-smile"></i> <span>Mood Tracker</span></a>
+            </li>
+            <li class="nav-item">
+                <a data-page="support" class="nav-link"><i class="fas fa-life-ring"></i> <span>Support</span></a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="index.html" class="nav-item"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <section id="dashboard" class="page-section active">
+            <div class="hero-section" id="dashboard-hero">
+                <div class="hero-content">
+                    <h1>Good Afternoon, Student</h1>
+                    <p>Here is your wellness dashboard for today.</p>
+                </div>
+            </div>
+            <div class="page-content-wrapper">
+                <div class="dashboard-vertical-layout">
+                    <div class="content-card" id="focus-card" style="animation-delay: 0.1s;">
+                            <div class="card-header">
+                            <i class="fas fa-star card-icon"></i>
+                            <h3 class="card-title">Today's Focus</h3>
+                        </div>
+                        <div class="card-content focus-content">
+                            <img src="https://images.unsplash.com/photo-1506126613408-4e61f3d3d30e?q=80&w=2070&auto=format&fit=crop" alt="Mindfulness">
+                            <div class="focus-text">
+                                <h3>The Power of Mindfulness</h3>
+                                <p>Practice being present in the moment to reduce stress and improve focus.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content-card" id="resources-card-preview" style="animation-delay: 0.2s;">
+                        <div class="card-header">
+                            <i class="fas fa-book-open card-icon"></i>
+                            <h3 class="card-title">Quick Resources</h3>
+                        </div>
+                        <div class="card-content">
+                            <ul class="resource-list">
+                                <li><a href="#">5-Minute Meditation</a></li>
+                                <li><a href="#">Techniques for Exam Stress</a></li>
+                                <li><a href="#">Finding Your Motivation</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="content-card" id="wall-card" style="animation-delay: 0.3s;">
+                        <div class="card-header">
+                            <i class="fas fa-comments card-icon"></i>
+                            <h3 class="card-title">From the Feelings Wall</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="feelings-post">
+                                <p>"Feeling a bit overwhelmed with assignments this week, but trying to take it one step at a time."</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content-card" id="mood-card" style="animation-delay: 0.4s;">
+                        <div class="card-header">
+                            <i class="fas fa-smile card-icon"></i>
+                            <h3 class="card-title">How are you feeling?</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="mood-selector">
+                               <span class="mood-btn">😊</span>
+                               <span class="mood-btn">🙂</span>
+                               <span class="mood-btn">😐</span>
+                               <span class="mood-btn">😕</span>
+                               <span class="mood-btn">😞</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="resources" class="page-section">
+            <div class="hero-section" id="resources-hero">
+                <div class="hero-content">
+                    <h1>Resource Hub</h1>
+                    <p>Curated articles, videos, and guides to support your well-being.</p>
+                </div>
+            </div>
+            <div class="page-content-wrapper">
+                <div class="filter-bar">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="stress">Stress</button>
+                    <button class="filter-btn" data-filter="anxiety">Anxiety</button>
+                    <button class="filter-btn" data-filter="motivation">Motivation</button>
+                    <button class="filter-btn" data-filter="videos">Videos</button>
+                </div>
+                <div class="article-grid">
+                      <div class="article-card" data-category="stress">
+                        <div class="article-image" style="background-image: url('https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2120&auto=format&fit=crop')"></div>
+                        <div class="article-content">
+                            <p class="article-category">Stress</p>
+                            <h3 class="article-title">Managing Exam Stress</h3>
+                            <div class="article-footer">
+                                <span class="article-type"><i class="fas fa-file-alt"></i> Article</span>
+                                <span>5 min read</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="article-card" data-category="anxiety">
+                        <div class="article-image" style="background-image: url('https://images.unsplash.com/photo-1594122230689-45899d9e6f69?q=80&w=2070&auto=format&fit=crop')"></div>
+                        <div class="article-content">
+                            <p class="article-category">Anxiety</p>
+                            <h3 class="article-title">Understanding Anxiety</h3>
+                            <div class="article-footer">
+                                <span class="article-type"><i class="fas fa-file-alt"></i> Article</span>
+                                <span>7 min read</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="article-card" data-category="videos">
+                        <div class="article-image" style="background-image: url('https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1974&auto=format&fit=crop')"></div>
+                        <div class="article-content">
+                            <p class="article-category">Videos</p>
+                            <h3 class="article-title">Guided Meditation for Calm</h3>
+                            <div class="article-footer">
+                                <span class="article-type"><i class="fas fa-video"></i> Video</span>
+                                <span>10:00</span>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="article-card quote-card" data-category="motivation">
+                        <div class="article-content">
+                            <p class="article-category">Motivation</p>
+                            <h3 class="article-title">"The secret of getting ahead is getting started."</h3>
+                            <div class="article-footer">
+                                <span class="article-type"><i class="fas fa-quote-left"></i> Quote</span>
+                                <span>Mark Twain</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="feelings-wall" class="page-section">
+            <div class="hero-section" id="feelings-hero">
+                <div class="hero-content">
+                    <h1>Feelings Wall</h1>
+                    <p>A safe and anonymous space to share what's on your mind.</p>
+                </div>
+            </div>
+            <div class="page-content-wrapper">
+                <div class="feelings-layout">
+                    <form class="post-form-card" id="post-form">
+                        <textarea id="post-textarea" placeholder="Share how you're feeling today..."></textarea>
+                        <button type="submit">Post Anonymously</button>
+                    </form>
+                    <div class="post-feed" id="post-feed">
+                        <div class="post-card">
+                            <p class="post-content">"Feeling a bit overwhelmed with assignments this week, but trying to take it one step at a time. It's tough but I know I can get through it."</p>
+                            <div class="post-footer">
+                                <span>Posted just now</span>
+                                <div class="post-reactions">
+                                    <button class="like-btn"><i class="fas fa-heart"></i></button>
+                                    <span>5</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="post-card">
+                            <p class="post-content">"Had a really great study session with a friend today and it made me feel so much more confident about my upcoming exam. Grateful for good friends."</p>
+                            <div class="post-footer">
+                                <span>Posted 2 hours ago</span>
+                                <div class="post-reactions">
+                                    <button class="like-btn"><i class="fas fa-heart"></i></button>
+                                    <span>12</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="bloom-circles" class="page-section">
+            <div class="hero-section" id="circles-hero">
+                <div class="hero-content">
+                    <h1>Bloom Circles</h1>
+                    <p>Find your community. Join discussions on topics that matter to you.</p>
+                </div>
+            </div>
+            <div class="page-content-wrapper">
+                <div class="page-header-actions">
+                    <h2>Join a Circle</h2>
+                    <button class="create-circle-btn"><i class="fas fa-plus"></i> Create New Circle</button>
+                </div>
+                <div class="circle-grid">
+                    <div class="circle-card">
+                        <div class="circle-card-header">
+                            <i class="fas fa-book-reader circle-icon"></i>
+                            <h3 class="circle-title">Exam Stress Support</h3>
+                        </div>
+                        <p class="circle-description">A space to share tips, vent frustrations, and find encouragement during the exam season.</p>
+                        <div class="circle-footer">
+                            <span class="circle-members"><i class="fas fa-users"></i> 24 Members</span>
+                            <button class="join-btn">Join</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="mood-tracker" class="page-section">
+            <div class="hero-section" id="mood-tracker-hero">
+                <div class="hero-content">
+                    <h1>Mood Tracker</h1>
+                    <p>Log your daily mood to better understand your emotional patterns.</p>
+                </div>
+            </div>
+            <div class="page-content-wrapper">
+                <div class="mood-tracker-layout">
+                    <div class="content-card mood-log-card">
+                        <div class="card-header">
+                            <i class="fas fa-calendar-day card-icon"></i>
+                            <h3 class="card-title">How are you feeling today?</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="mood-selector" id="daily-mood-selector">
+                               <span class="mood-btn" data-mood="happy">😊</span>
+                               <span class="mood-btn" data-mood="good">🙂</span>
+                               <span class="mood-btn" data-mood="neutral">😐</span>
+                               <span class="mood-btn" data-mood="bad">😞</span>
+                            </div>
+                            <div class="mood-entry" id="mood-entry-box" style="display: none;">
+                                <textarea id="mood-note-textarea" placeholder="What's making you feel this way? (Optional)"></textarea>
+                                <button id="save-mood-log-btn">Save Log</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content-card mood-trends-card">
+                            <div class="card-header">
+                            <i class="fas fa-chart-line card-icon"></i>
+                            <h3 class="card-title">Your Week at a Glance</h3>
+                        </div>
+                        <div class="card-content">
+                            <p class="summary">Overall, it's been a positive week!</p>
+                            <div class="chart-container">
+                               <canvas id="moodChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="support" class="page-section">
+            <div class="hero-section" id="support-hero">
+                <div class="hero-content">
+                    <h1>Get Support</h1>
+                    <p>Send a private message to the Bloom admin team for help or feedback.</p>
+                </div>
+            </div>
+            <div class="page-content-wrapper">
+                <div class="support-form-card">
+                    <form id="support-message-form">
+                        <div class="form-group">
+                            <label for="supportEmail">Your Email Address</label>
+                            <input type="email" id="supportEmail" placeholder="your.email@example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="supportSubject">Subject</label>
+                            <input type="text" id="supportSubject" placeholder="e.g., Issue with Mood Tracker, Feature Suggestion" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="supportMessage">Message</label>
+                            <textarea id="supportMessage" rows="6" placeholder="Describe your issue or feedback here..." required></textarea>
+                        </div>
+                        <button type="submit">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- 1. SELECTORS ---
+        const pageSections = document.querySelectorAll('.page-section');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const postForm = document.getElementById('post-form');
+        const postTextarea = document.getElementById('post-textarea');
+        const postFeed = document.getElementById('post-feed');
+        const dailyMoodSelector = document.getElementById('daily-mood-selector');
+        const moodEntryBox = document.getElementById('mood-entry-box');
+        const moodNoteTextarea = document.getElementById('mood-note-textarea');
+        const saveMoodLogBtn = document.getElementById('save-mood-log-btn');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const articleGrid = document.querySelector('.article-grid');
+        const supportMessageForm = document.getElementById('support-message-form');
+
+        // --- 2. SETUP & SECURITY ---
+        const API_BASE_URL = 'http://localhost:5000/api';
+        let moodChartInstance = null;
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'index.html';
+            return;
+        }
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const userName = payload.name;
+            const welcomeMessage = document.querySelector('#dashboard-hero h1');
+            if (welcomeMessage) {
+                welcomeMessage.textContent = `Good Afternoon, ${userName}`;
+            }
+        } catch (e) {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
+        const getAuthHeaders = () => ({
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        });
+
+        // --- 3. PAGE NAVIGATION ---
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = link.dataset.page;
+                if (page) {
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                    pageSections.forEach(section => section.classList.remove('active'));
+                    const activeSection = document.getElementById(page);
+                    if (activeSection) activeSection.classList.add('active');
+                    if (page === 'mood-tracker') initCharts();
+                }
+            });
+        });
+
+        // --- 4. FEATURE LOGIC ---
+
+        // FEELINGS WALL
+        async function loadPosts() {
+            if (!postFeed) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts`, { headers: getAuthHeaders() });
+                if (!response.ok) throw new Error('Could not fetch posts');
+                const posts = await response.json();
+                postFeed.innerHTML = '';
+                posts.forEach(post => postFeed.appendChild(createPostElement(post)));
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                postFeed.innerHTML = '<p>Could not load posts.</p>';
+            }
+        }
+        if (postForm) {
+            postForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const content = postTextarea.value.trim();
+                if (!content) return;
+                try {
+                    await fetch(`${API_BASE_URL}/posts`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ content }) });
+                    postTextarea.value = '';
+                    loadPosts();
+                } catch (error) {
+                    console.error('Error submitting post:', error);
+                }
+            });
+        }
+        function createPostElement(post) {
+            const postCard = document.createElement('div');
+            postCard.classList.add('post-card');
+            const postDate = new Date(post.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+            postCard.innerHTML = `<p class="post-content">${post.content}</p><div class="post-footer"><span>Posted by ${post.userName} on ${postDate}</span><div class="post-reactions"><button class="flag-btn" data-id="${post._id}" title="Flag as inappropriate"><i class="fas fa-flag"></i></button></div></div>`;
+            return postCard;
+        }
+        if(postFeed) {
+            postFeed.addEventListener('click', async (e) => {
+                const flagButton = e.target.closest('.flag-btn');
+                if (flagButton) {
+                    const postId = flagButton.dataset.id;
+                    if (confirm('Are you sure you want to flag this post for review?')) {
+                        try {
+                            const response = await fetch(`${API_BASE_URL}/posts/${postId}/flag`, { method: 'PUT', headers: getAuthHeaders() });
+                            if (!response.ok) throw new Error('Failed to flag post');
+                            const result = await response.json();
+                            alert(result.message);
+                            flagButton.style.color = 'orange';
+                        } catch (error) {
+                            alert('Could not flag the post.');
+                        }
+                    }
+                }
+            });
+        }
+
+        // RESOURCE HUB
+        async function loadResources() {
+            if (!articleGrid) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/resources`, { headers: getAuthHeaders() });
+                if (!response.ok) throw new Error('Could not fetch resources');
+                const resources = await response.json();
+                articleGrid.innerHTML = '';
+                if (resources.length === 0) {
+                    articleGrid.innerHTML = '<p>No resources have been added yet.</p>';
+                    return;
+                }
+                resources.forEach(resource => {
+                    const resourceElement = createResourceElement(resource);
+                    articleGrid.appendChild(resourceElement);
+                });
+            } catch (error) {
+                console.error('Error loading resources:', error);
+            }
+        }
+        function createResourceElement(resource) {
+            const articleCard = document.createElement('div');
+            articleCard.className = 'article-card';
+            articleCard.dataset.category = resource.category;
+            let contentHtml = '';
+            const iconMap = { article: 'fa-file-alt', video: 'fa-video', audio: 'fa-music', quote: 'fa-quote-left' };
+            if (resource.type === 'quote') {
+                articleCard.classList.add('quote-card');
+                contentHtml = `<div class="article-content"><p class="article-category">${resource.category}</p><h3 class="article-title">"${resource.title}"</h3><div class="article-footer"><span class="article-type"><i class="fas ${iconMap[resource.type]}"></i> ${resource.type}</span><span>${resource.link}</span></div></div>`;
+            } else {
+                contentHtml = `<div class="article-image" style="background-image: url('${resource.imageUrl || 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?q=80&w=2072&auto=format&fit=crop'}')"></div><div class="article-content"><p class="article-category">${resource.category}</p><h3 class="article-title">${resource.title}</h3><div class="article-footer"><span class="article-type"><i class="fas ${iconMap[resource.type]}"></i> ${resource.type}</span><a href="${resource.link}" target="_blank">View More</a></div></div>`;
+            }
+            articleCard.innerHTML = contentHtml;
+            return articleCard;
+        }
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const filter = btn.dataset.filter;
+                document.querySelectorAll('.article-card').forEach(card => {
+                    if (filter === 'all' || card.dataset.category === filter) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // MOOD TRACKER
+        async function initCharts() {
+            const ctx = document.getElementById('moodChart');
+            if (!ctx) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/moods`, { headers: getAuthHeaders() });
+                if (!response.ok) throw new Error('Could not fetch mood data');
+                const moodData = await response.json();
+                const moodMap = { 'happy': 4, 'good': 3, 'neutral': 2, 'bad': 1, 'awful': 0 };
+                const labels = moodData.map(log => new Date(log.date).toLocaleDateString('en-IN', { weekday: 'short' }));
+                const dataPoints = moodData.map(log => moodMap[log.mood]);
+                if (moodChartInstance) moodChartInstance.destroy();
+                moodChartInstance = new Chart(ctx.getContext('2d'), {
+                    type: 'line', data: { labels, datasets: [{ label: 'Your Mood', data: dataPoints, borderColor: 'rgba(251, 191, 36, 1)', backgroundColor: 'rgba(251, 191, 36, 0.2)', borderWidth: 3, tension: 0.4, fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1, callback: (value) => ['Awful', 'Bad', 'Neutral', 'Good', 'Happy', ''][value] } } }, plugins: { legend: { display: false } } }
+                });
+            } catch (error) {
+                console.error('Error initializing charts:', error);
+            }
+        }
+        if (dailyMoodSelector) {
+            dailyMoodSelector.addEventListener('click', (e) => {
+                if (e.target.classList.contains('mood-btn')) {
+                    dailyMoodSelector.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    moodEntryBox.style.display = 'block';
+                }
+            });
+        }
+        if (saveMoodLogBtn) {
+            saveMoodLogBtn.addEventListener('click', async () => {
+                const selectedMoodElement = dailyMoodSelector.querySelector('.mood-btn.selected');
+                const mood = selectedMoodElement ? selectedMoodElement.dataset.mood : null;
+                if (!mood) return alert('Please select a mood.');
+                try {
+                    await fetch(`${API_BASE_URL}/moods`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ mood, note: moodNoteTextarea.value.trim() }) });
+                    moodEntryBox.style.display = 'none';
+                    initCharts();
+                    alert('Mood logged successfully!');
+                } catch (error) {
+                    alert('Could not save your mood log.');
+                }
+            });
+        }
+        
+        // SUPPORT FORM
+        if (supportMessageForm) {
+            supportMessageForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const subject = document.getElementById('supportSubject').value;
+                const message = document.getElementById('supportMessage').value;
+                const senderEmail = document.getElementById('supportEmail').value;
+                try {
+                    const response = await fetch(`${API_BASE_URL}/support`, {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ subject, message, senderEmail })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.message);
+                    alert(result.message);
+                    supportMessageForm.reset();
+                } catch (error) {
+                    alert('Could not submit your message.');
+                }
+            });
+        }
+        
+        // --- 5. INITIAL DATA LOAD ---
+        loadPosts();
+        loadResources();
+    });
+</script>
+</body>
+</html>
